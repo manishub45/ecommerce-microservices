@@ -12,24 +12,9 @@ public class SubCategoryDto {
 
     private Integer id;
     private String name;
-    private Category category;
-    private Set<Product> products = new LinkedHashSet<>();
 
-    public Set<Product> getProducts() {
-        return products;
-    }
 
-    public void setProducts(Set<Product> products) {
-        this.products = products;
-    }
 
-    public Category getCategory() {
-        return category;
-    }
-
-    public void setCategory(Category category) {
-        this.category = category;
-    }
 
     public Integer getId() {
         return id;

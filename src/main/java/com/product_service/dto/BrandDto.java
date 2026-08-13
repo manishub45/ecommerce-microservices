@@ -15,7 +15,7 @@ public class BrandDto {
     private Integer id;
     private String name;
     private BigDecimal price;
-    private Product product;
+
 
 
     private Set<Size> sizes = new LinkedHashSet<>();
@@ -39,13 +39,7 @@ public class BrandDto {
         this.sizes = sizes;
     }
 
-    public Product getProduct() {
-        return product;
-    }
 
-    public void setProduct(Product product) {
-        this.product = product;
-    }
 
     public Integer getId() {
         return id;
