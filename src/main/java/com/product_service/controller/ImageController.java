@@ -20,9 +20,14 @@ public class ImageController {
         this.s3Service = s3Service;
     }
 
+
     @PostMapping("/upload-image")
-    public ResponseEntity<ApiResponse<String>> uploadImage(@RequestParam("file") MultipartFile file) {
-        String imageUrl = s3Service.uploadFile(file);
+    public ResponseEntity<ApiResponse<String>> uploadImage(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("brandId") Integer brandId) {
+
+        String imageUrl = s3Service.uploadFile(file, brandId);
+
         ApiResponse<String> response = new ApiResponse<>();
         response.setMessage("Image uploaded successfully");
         response.setStatus(200);
