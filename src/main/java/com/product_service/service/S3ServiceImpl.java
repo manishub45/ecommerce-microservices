@@ -2,6 +2,8 @@ package com.product_service.service;
 
 import com.product_service.entity.Brand;
 import com.product_service.entity.Image;
+import com.product_service.exception.InvalidFileException;
+import com.product_service.exception.ResourceNotFoundException;
 import com.product_service.repository.BrandRepository;
 import com.product_service.repository.ImageRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +38,26 @@ public class S3ServiceImpl implements S3Service {
     @Override
     public String uploadFile(MultipartFile file, Integer brandId) {
         try {
+
+            String contentType = file.getContentType();
+            if (!contentType.equals("image/jpeg") && !contentType.equals("image/png")) {
+                throw new InvalidFileException("Only JPG and PNG files are allowed. Received: " + contentType);
+            }
+
+            //  File size check (max 5MB)
+            long maxSizeInBytes = 5 * 1024 * 1024; // 5MB
+            if (file.getSize() > maxSizeInBytes) {
+                throw new InvalidFileException("File size exceeds 5MB limit. Uploaded file size: "
+                        + (file.getSize() / (1024 * 1024)) + "MB");
+            }
+
+
+            //  Validation 3: Count limit check (max 12 images per brand)
+            long currentImageCount = imageRepository.countByBrandId(brandId);
+            if (currentImageCount >= 12) {
+                throw new InvalidFileException("Maximum 12 images allowed per brand. Current count: " + currentImageCount);
+            }
+
             String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
 
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
@@ -49,7 +71,8 @@ public class S3ServiceImpl implements S3Service {
                             file.getInputStream(), file.getSize()));
             String url =  "https://" + bucketName + ".s3.amazonaws.com/" + fileName;
 
-            Brand brand = brandRepository.findById(brandId).get();
+            Brand brand = brandRepository.findById(brandId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Brand not found with id: " + brandId));
             Image image = new Image();
             image.setBrand(brand);
             image.setUrl(url);
