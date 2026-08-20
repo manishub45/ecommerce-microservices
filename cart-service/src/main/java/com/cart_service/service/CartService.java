@@ -60,4 +60,9 @@ public class CartService {
 
         return cartRepository.save(cart);
     }
+
+    public Cart getCartByUuid(String uuid) {
+        return cartRepository.findByUuid(uuid)
+                .orElseThrow(() -> new RuntimeException("Cart not found with uuid: " + uuid));
+    }
 }

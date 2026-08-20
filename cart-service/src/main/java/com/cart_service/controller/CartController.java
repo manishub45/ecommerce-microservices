@@ -32,4 +32,10 @@ public class CartController {
                 .headers(headers)
                 .body("Product added to cart");
     }
+
+    @GetMapping("/{uuid}")
+    public ResponseEntity<Cart> getCart(@PathVariable String uuid) {
+        Cart cart = cartService.getCartByUuid(uuid);
+        return ResponseEntity.ok(cart);
+    }
 }
