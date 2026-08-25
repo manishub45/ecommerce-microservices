@@ -1,10 +1,12 @@
 package com.order_service.service;
 
-
-
 import com.order_service.client.CartServiceClient;
+import com.order_service.client.PaymentServiceClient;
 import com.order_service.dto.CartItemDto;
 import com.order_service.dto.CartResponseDto;
+import com.order_service.dto.OrderPlacedResponse;
+import com.order_service.dto.PaymentRequestDto;
+import com.order_service.dto.PaymentResponseDto;
 import com.order_service.dto.PlaceOrderRequest;
 import com.order_service.entity.Order;
 import com.order_service.entity.OrderItem;
@@ -20,13 +22,15 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final CartServiceClient cartServiceClient;
+    private final PaymentServiceClient paymentServiceClient;
 
-    public OrderService(OrderRepository orderRepository, CartServiceClient cartServiceClient) {
+    public OrderService(OrderRepository orderRepository, CartServiceClient cartServiceClient, PaymentServiceClient paymentServiceClient) {
         this.orderRepository = orderRepository;
         this.cartServiceClient = cartServiceClient;
+        this.paymentServiceClient = paymentServiceClient;
     }
 
-    public Order placeOrder(PlaceOrderRequest request) {
+    public OrderPlacedResponse placeOrder(PlaceOrderRequest request) {
 
         // 1. Cart Service se cart mangwao (Feign Client se)
         CartResponseDto cart = cartServiceClient.getCart(request.getCartUuid());
@@ -36,10 +40,9 @@ public class OrderService {
         order.setUserId(request.getUserId());
         order.setStatus(OrderStatus.PLACED);
         order.setOrderDate(LocalDateTime.now());
-
-        // 3. Cart ke har item ko OrderItem mein convert karo (SNAPSHOT lena)
         BigDecimal totalAmount = BigDecimal.ZERO;
 
+        // 3. Cart ke har item ko OrderItem mein convert karo (SNAPSHOT lena)
         for (CartItemDto cartItem : cart.getItems()) {
             OrderItem orderItem = new OrderItem();
             orderItem.setProductId(cartItem.getProductId());
@@ -49,7 +52,6 @@ public class OrderService {
 
             order.getItems().add(orderItem);
 
-            // Total amount calculate karo
             BigDecimal itemTotal = cartItem.getPrice().multiply(BigDecimal.valueOf(cartItem.getQuantity()));
             totalAmount = totalAmount.add(itemTotal);
         }
@@ -57,6 +59,13 @@ public class OrderService {
         order.setTotalAmount(totalAmount);
 
         // 4. DB mein save karo
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+
+        // 5. Payment Service ko call karo (Feign se) — PaymentIntent banwane ke liye
+        PaymentRequestDto paymentRequest = new PaymentRequestDto(savedOrder.getId(), savedOrder.getTotalAmount());
+        PaymentResponseDto paymentResponse = paymentServiceClient.createPayment(paymentRequest);
+
+        // 6. Order + clientSecret dono ek response mein wrap karke bhejo
+        return new OrderPlacedResponse(savedOrder, paymentResponse.getClientSecret());
     }
 }

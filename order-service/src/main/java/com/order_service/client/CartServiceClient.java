@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 @FeignClient(name = "cart-service")
-    public interface CartServiceClient {
+public interface CartServiceClient {
 
         @GetMapping("/api/v1/cart/{uuid}")
         CartResponseDto getCart(@PathVariable("uuid") String uuid);
