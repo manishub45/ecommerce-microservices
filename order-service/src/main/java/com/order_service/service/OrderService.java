@@ -1,14 +1,9 @@
 package com.order_service.service;
 
+import com.order_service.client.AuthServiceClient;
 import com.order_service.client.CartServiceClient;
 import com.order_service.client.PaymentServiceClient;
-import com.order_service.dto.CartItemDto;
-import com.order_service.dto.CartResponseDto;
-import com.order_service.dto.OrderPlacedEvent;
-import com.order_service.dto.OrderPlacedResponse;
-import com.order_service.dto.PaymentRequestDto;
-import com.order_service.dto.PaymentResponseDto;
-import com.order_service.dto.PlaceOrderRequest;
+import com.order_service.dto.*;
 import com.order_service.entity.Order;
 import com.order_service.entity.OrderItem;
 import com.order_service.entity.OrderStatus;
@@ -26,13 +21,16 @@ public class OrderService {
     private final CartServiceClient cartServiceClient;
     private final PaymentServiceClient paymentServiceClient;
     private final OrderEventProducer orderEventProducer;
+    private final AuthServiceClient authServiceClient;
 
     public OrderService(OrderRepository orderRepository, CartServiceClient cartServiceClient,
-                        PaymentServiceClient paymentServiceClient, OrderEventProducer orderEventProducer) {
+                        PaymentServiceClient paymentServiceClient, OrderEventProducer orderEventProducer,
+                        AuthServiceClient authServiceClient) {
         this.orderRepository = orderRepository;
         this.cartServiceClient = cartServiceClient;
         this.paymentServiceClient = paymentServiceClient;
         this.orderEventProducer = orderEventProducer;
+        this.authServiceClient = authServiceClient;
     }
 
     public OrderPlacedResponse placeOrder(PlaceOrderRequest request) {
@@ -65,7 +63,10 @@ public class OrderService {
         PaymentRequestDto paymentRequest = new PaymentRequestDto(savedOrder.getId(), savedOrder.getTotalAmount());
         PaymentResponseDto paymentResponse = paymentServiceClient.createPayment(paymentRequest);
 
-        OrderPlacedEvent event = new OrderPlacedEvent(savedOrder.getId(), savedOrder.getUserId(), savedOrder.getTotalAmount());
+        UserDto user = authServiceClient.getUserById(savedOrder.getUserId());
+
+        OrderPlacedEvent event = new OrderPlacedEvent(savedOrder.getId(), savedOrder.getUserId(),
+                savedOrder.getTotalAmount(), user.getEmail());
         orderEventProducer.sendOrderPlacedEvent(event);
 
         return new OrderPlacedResponse(savedOrder, paymentResponse.getClientSecret());
