@@ -14,7 +14,7 @@ public class OrderEventConsumer {
         this.emailService = emailService;
     }
 
-    @KafkaListener(topics = "order-placed-topic", groupId = "notification-group")
+    @KafkaListener(topics = "order-placed-topic", groupId = "notification-group", containerFactory = "orderKafkaListenerContainerFactory")
     public void handleOrderPlacedEvent(OrderPlacedEvent event) {
 
         System.out.println("Notification: Order placed - Order ID: " + event.getOrderId()

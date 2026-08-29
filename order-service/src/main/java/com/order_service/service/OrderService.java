@@ -60,7 +60,7 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        PaymentRequestDto paymentRequest = new PaymentRequestDto(savedOrder.getId(), savedOrder.getTotalAmount());
+        PaymentRequestDto paymentRequest = new PaymentRequestDto(savedOrder.getId(), savedOrder.getUserId(), savedOrder.getTotalAmount());
         PaymentResponseDto paymentResponse = paymentServiceClient.createPayment(paymentRequest);
 
         UserDto user = authServiceClient.getUserById(savedOrder.getUserId());

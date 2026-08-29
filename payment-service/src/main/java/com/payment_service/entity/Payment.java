@@ -1,7 +1,5 @@
 package com.payment_service.entity;
 
-
-
 import com.payment_service.enums.PaymentStatus;
 import jakarta.persistence.*;
 
@@ -17,6 +15,8 @@ public class Payment {
     private Long id;
 
     private Long orderId;
+
+    private Long userId;
 
     private BigDecimal amount;
 
@@ -48,6 +48,14 @@ public class Payment {
 
     public void setOrderId(Long orderId) {
         this.orderId = orderId;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public BigDecimal getAmount() {

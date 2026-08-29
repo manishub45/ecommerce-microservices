@@ -28,4 +28,21 @@ public class EmailService {
 
         mailSender.send(message);
     }
+
+    public void sendPaymentStatusEmail(String toEmail, Long orderId, String status) {
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(toEmail);
+
+        if (status.equals("SUCCESS")) {
+            message.setSubject("Payment Successful - Order #" + orderId);
+            message.setText("Hi,\n\nYour payment for order #" + orderId + " was successful.\n\nThank you!");
+        } else {
+            message.setSubject("Payment Failed - Order #" + orderId);
+            message.setText("Hi,\n\nYour payment for order #" + orderId + " has failed. Please try again.\n\nRegards.");
+        }
+
+        mailSender.send(message);
+    }
 }
