@@ -11,7 +11,10 @@ import com.payment_service.kafka.PaymentEventProducer;
 import com.payment_service.repository.PaymentRepository;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.Refund;
+import com.stripe.net.RequestOptions;
 import com.stripe.param.PaymentIntentCreateParams;
+import com.stripe.param.RefundCreateParams;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -34,7 +37,7 @@ public class PaymentService {
         this.paymentEventProducer = paymentEventProducer;
     }
 
-    public PaymentResponseDto createPayment(PaymentRequestDto requestDto) throws StripeException {
+    public PaymentResponseDto createPayment(PaymentRequestDto requestDto, String idempotencyKey) throws StripeException {
 
         com.stripe.Stripe.apiKey = stripeSecretKey;
 
@@ -54,7 +57,11 @@ public class PaymentService {
                 .setCurrency("inr")
                 .build();
 
-        PaymentIntent paymentIntent = PaymentIntent.create(params);
+        RequestOptions requestOptions = RequestOptions.builder()
+                .setIdempotencyKey(idempotencyKey)
+                .build();
+
+        PaymentIntent paymentIntent = PaymentIntent.create(params, requestOptions);
 
         payment.setStripePaymentIntentId(paymentIntent.getId());
         paymentRepository.save(payment);
@@ -85,7 +92,6 @@ public class PaymentService {
 
         payment = paymentRepository.save(payment);
 
-        // Naya: Auth Service  email fetch , event send
         UserDto user = authServiceClient.getUserById(payment.getUserId());
 
         PaymentStatusEvent event = new PaymentStatusEvent(
@@ -100,5 +106,56 @@ public class PaymentService {
                 payment.getStatus(),
                 null
         );
+    }
+
+    public PaymentResponseDto refundPayment(Long orderId) throws StripeException {
+
+        com.stripe.Stripe.apiKey = stripeSecretKey;
+
+        Payment payment = paymentRepository.findByOrderId(orderId);
+
+        if (payment == null) {
+            throw new IllegalStateException("No payment found for orderId: " + orderId);
+        }
+
+        if (payment.getStatus() != PaymentStatus.SUCCESS) {
+            throw new IllegalStateException("Cannot refund. Payment is not in SUCCESS state. Current status: " + payment.getStatus());
+        }
+
+        RefundCreateParams params = RefundCreateParams.builder()
+                .setPaymentIntent(payment.getStripePaymentIntentId())
+                .build();
+
+        Refund refund = Refund.create(params);
+
+        payment.setRefundId(refund.getId());
+        paymentRepository.save(payment);
+
+        return new PaymentResponseDto(
+                payment.getId(),
+                payment.getStatus(),
+                null
+        );
+    }
+
+    public void confirmRefund(String stripePaymentIntentId) {
+
+        Payment payment = paymentRepository.findByStripePaymentIntentId(stripePaymentIntentId);
+
+        if (payment == null) {
+            return;
+        }
+
+        payment.setStatus(PaymentStatus.REFUNDED);
+        payment = paymentRepository.save(payment);
+
+        UserDto user = authServiceClient.getUserById(payment.getUserId());
+
+        PaymentStatusEvent event = new PaymentStatusEvent(
+                payment.getOrderId(),
+                payment.getStatus().name(),
+                user.getEmail()
+        );
+        paymentEventProducer.sendPaymentStatusEvent(event);
     }
 }

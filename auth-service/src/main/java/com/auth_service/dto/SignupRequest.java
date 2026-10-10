@@ -1,20 +1,16 @@
 package com.auth_service.dto;
 
-import com.auth_service.enums.Role;
-
 public class SignupRequest {
 
     private String email;
     private String password;
-    private Role role;
 
     public SignupRequest() {
     }
 
-    public SignupRequest(String email, String password, Role role) {
+    public SignupRequest(String email, String password) {
         this.email = email;
         this.password = password;
-        this.role = role;
     }
 
     public String getEmail() {
@@ -31,13 +27,5 @@ public class SignupRequest {
 
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public void setRole(Role role) {
-        this.role = role;
     }
 }

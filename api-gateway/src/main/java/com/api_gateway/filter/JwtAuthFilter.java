@@ -48,8 +48,9 @@ public class JwtAuthFilter implements Filter {
             }
         }
 
+        // CHANGE 1: public raasta, lekin client ka nakli X-User-Id hata do
         if (requiredRole == null) {
-            chain.doFilter(request, response);
+            chain.doFilter(new UserIdHeaderWrapper(request, null), response);
             return;
         }
 
@@ -80,9 +81,18 @@ public class JwtAuthFilter implements Filter {
             return;
         }
 
-        request.setAttribute("email", claims.getSubject());
-        request.setAttribute("role", userRole);
+        // CHANGE 2: token se userId nikaalo
+        Object userIdClaim = claims.get("userId");
 
-        chain.doFilter(request, response);
+        if (userIdClaim == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Token does not contain userId, please login again");
+            return;
+        }
+
+        String userId = String.valueOf(userIdClaim);
+
+        // CHANGE 3: cover pe asli userId likh ke aage bhejo
+        chain.doFilter(new UserIdHeaderWrapper(request, userId), response);
     }
 }

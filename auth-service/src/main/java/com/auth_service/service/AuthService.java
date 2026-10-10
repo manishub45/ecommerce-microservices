@@ -4,6 +4,7 @@ import com.auth_service.dto.AuthResponse;
 import com.auth_service.dto.LoginRequest;
 import com.auth_service.dto.SignupRequest;
 import com.auth_service.entity.User;
+import com.auth_service.enums.Role;
 import com.auth_service.repository.UserRepository;
 import com.auth_service.util.JwtUtil;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -30,11 +31,11 @@ public class AuthService {
         User user = new User();
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(request.getRole());
+        user.setRole(Role.CUSTOMER);
 
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
 
-        String token = jwtUtil.generateToken(user.getEmail(), user.getRole());
+        String token = jwtUtil.generateToken(savedUser.getId(), savedUser.getEmail(), savedUser.getRole());
         return new AuthResponse(token);
     }
 
@@ -50,7 +51,8 @@ public class AuthService {
             throw new RuntimeException("Invalid email or password");
         }
 
-        String token = jwtUtil.generateToken(user.getEmail(), user.getRole());
+
+        String token = jwtUtil.generateToken(user.getId(), user.getEmail(), user.getRole());
         return new AuthResponse(token);
     }
 }

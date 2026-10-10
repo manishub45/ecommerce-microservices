@@ -2,7 +2,7 @@ package com.cart_service.dto;
 
 import java.math.BigDecimal;
 
-public class AddToCartRequest {
+public class  AddToCartRequest {
 
     public Long getProductId() {
         return productId;

@@ -1,7 +1,5 @@
 package com.payment_service.controller;
 
-
-
 import com.payment_service.dto.PaymentRequestDto;
 import com.payment_service.dto.PaymentResponseDto;
 import com.payment_service.service.PaymentService;
@@ -20,14 +18,22 @@ public class PaymentController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<PaymentResponseDto> createPayment(@RequestBody PaymentRequestDto requestDto) throws StripeException {
-        PaymentResponseDto response = paymentService.createPayment(requestDto);
+    public ResponseEntity<PaymentResponseDto> createPayment(
+            @RequestBody PaymentRequestDto request,
+            @RequestHeader("Idempotency-Key") String idempotencyKey) throws StripeException {
+        PaymentResponseDto response = paymentService.createPayment(request, idempotencyKey);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/confirm/{stripePaymentIntentId}")
     public ResponseEntity<PaymentResponseDto> confirmPayment(@PathVariable String stripePaymentIntentId) throws StripeException {
         PaymentResponseDto response = paymentService.confirmPayment(stripePaymentIntentId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/refund/{orderId}")
+    public ResponseEntity<PaymentResponseDto> refundPayment(@PathVariable Long orderId) throws StripeException {
+        PaymentResponseDto response = paymentService.refundPayment(orderId);
         return ResponseEntity.ok(response);
     }
 }
