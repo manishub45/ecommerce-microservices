@@ -55,6 +55,7 @@ public class PaymentService {
         PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                 .setAmount(amountInPaise)
                 .setCurrency("inr")
+                .putMetadata("orderId", String.valueOf(requestDto.getOrderId()))
                 .build();
 
         RequestOptions requestOptions = RequestOptions.builder()

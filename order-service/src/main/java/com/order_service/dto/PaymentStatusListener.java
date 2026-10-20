@@ -1,4 +1,4 @@
-package com.order_service.kafka;
+package com.order_service.dto;
 
 import com.order_service.dto.PaymentStatusEvent;
 import com.order_service.service.OrderService;
